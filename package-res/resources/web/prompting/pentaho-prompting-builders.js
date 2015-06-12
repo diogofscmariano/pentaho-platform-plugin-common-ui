@@ -41,7 +41,10 @@ Widget Definition Structure:
 
 */
 
-define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'common-ui/prompting/pentaho-prompting-bind'], function() {
+define("common-ui/prompting/pentaho-prompting-builders", [ 'cdf/lib/Base', 'cdf/components/BaseComponent',
+'cdf/dashboard/Utils', 'cdf/components/TextComponent', 'cdf/components/SelectComponent', 
+'common-ui/prompting/pentaho-prompting-bind',
+'common-ui/prompting/pentaho-prompting-components'], function(Base, BaseComponent, Utils, TextComponent, SelectComponent) {
   // TODO Refactor so we're not using global objects. This requires an
   // update to doc for any custom components in addition to code here
   // and anywhere else prompting is used.
@@ -52,8 +55,9 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
 
   pentaho.common.prompting.builders.PromptPanelBuilder = Base.extend({
     build: function(promptPanel) {
+
       var name = 'prompt' + promptPanel.guid;
-      var layout = {
+      return new ScrollingPromptPanelLayoutComponent({
         name: name,
         type: 'ScrollingPromptPanelLayoutComponent',
         htmlObject:  promptPanel.destinationId,
@@ -62,8 +66,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         postExecution: function() {
           promptPanel._ready();
         }
-      };
-      return layout;
+      });
     }
   });
 
@@ -125,7 +128,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var guid = args.promptPanel.generateWidgetGUID();
 
-      return {
+      return new FlowPromptLayoutComponent({
         type: 'FlowPromptLayoutComponent',
         promptType: 'submit',
         name: guid,
@@ -134,14 +137,15 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         components: [
           pentaho.common.prompting.builders.WidgetBuilder.build(args, 'submit')
         ]
-      }
+      });
     }
   });
 
   pentaho.common.prompting.builders.SubmitComponentBuilder = Base.extend({
     build: function(args) {
       var guid = args.promptPanel.generateWidgetGUID();
-      return {
+
+      return new SubmitPromptComponent({
         promptType: 'submit',
         type: 'SubmitPromptComponent',
         name: guid,
@@ -151,7 +155,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         promptPanel: args.promptPanel,
         paramDefn: args.promptPanel.paramDefn,
         executeAtStart: true
-      };
+      });
     }
   });
 
@@ -181,7 +185,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var widget = this.base(args);
       var name = widget.name + '-label';
-      var label = Dashboards.escapeHtml(args.param.attributes['label'] || args.param.name);
+      var label = Utils.escapeHtml(args.param.attributes['label'] || args.param.name);
       $.extend(widget, {
         promptType: 'label',
         name: name,
@@ -190,7 +194,9 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         expression: function() { return label; }
       });
       delete widget.parameter; // labels don't have parameters
-      return widget;
+
+      var comp = new TextComponent(widget);
+      return comp;
     }
   });
 
@@ -200,16 +206,17 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
       var label = args.errorMessage;
       widget.isErrorIndicator = true;
       widget.expression = function() { return label; };
-      return widget;
     }
   });
 
   pentaho.common.prompting.builders.TextInputBuilder = pentaho.common.prompting.builders.ParameterWidgetBuilderBase.extend({
     build: function(args) {
       var widget = this.base(args);
-      return $.extend(widget, {
+      $.extend(widget, {
         type: 'TextInputComponent'
       });
+      var comp = new TextInputComponent(widget);
+      return comp;
     }
   });
 
@@ -241,7 +248,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         widget.valuesArray = [['', '']].concat(widget.valuesArray);
       }
 
-      return $.extend(widget, {
+      $.extend(widget, {
         type: 'SelectComponent',
         preExecution: function() {
           // SelectComponent defines defaultIfEmpty = true for non-multi selects.
@@ -250,13 +257,17 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
           this.defaultIfEmpty = !args.promptPanel.paramDefn.ignoreBiServer5538 && !args.param.hasSelection();
         }
       });
+
+      var comp = new SelectComponent(widget);
+      return comp;
+
     }
   });
 
   pentaho.common.prompting.builders.ListBuilder = pentaho.common.prompting.builders.ValueBasedParameterWidgetBuilder.extend({
     build: function(args) {
       var widget = this.base(args);
-      return $.extend(widget, {
+      $.extend(widget, {
         type: args.param.multiSelect ? 'SelectMultiComponent' : 'SelectComponent',
         size: args.param.attributes['parameter-visible-items'] || 5,
         changeMode: args.param.multiSelect ? 'timeout-focus' : 'immediate',  // PRD-3687
@@ -266,13 +277,19 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
           this.defaultIfEmpty = false;
         }
       });
+
+      if(widget.type == 'SelectMultiComponent') {
+        return new SelectMultiComponent(widget);
+      } else if( widget.type == 'SelectComponent' ) {
+        return new SelectComponent(widget);
+      }
     }
   });
 
   pentaho.common.prompting.builders.MultiButtonBuilder = pentaho.common.prompting.builders.ValueBasedParameterWidgetBuilder.extend({
     build: function(args) {
       var widget = this.base(args);
-      return $.extend(widget, {
+      $.extend(widget, {
         type: 'MultiButtonComponent',
         isMultiple: args.param.multiSelect,
         verticalOrientation: 'vertical' === args.param.attributes['parameter-layout'],
@@ -283,6 +300,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
           $('#' + this.htmlObject).addClass('pentaho-toggle-button-container');
         }
       });
+      return new MultiButtonComponent(widget);
     }
   });
 
@@ -300,7 +318,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var widget = this.base(args);
       widget.type = 'CheckComponent';
-      return widget;
+      return new CheckComponent(widget);
     }
   });
 
@@ -308,7 +326,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var widget = this.base(args);
       widget.type = 'radio'; // Specifically 'radio' instead of 'RadioComponent' because the CoreComponent.js implementation requires it.
-      return widget;
+      return new RadioComponent(widget);
     }
   });
 
@@ -316,13 +334,15 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var formatter = args.promptPanel.createFormatter(args.promptPanel.paramDefn, args.param);
 
-      return $.extend(this.base(args), {
+      $.extend(this.base(args), {
         type: 'ExternalInputComponent',
         transportFormatter: args.promptPanel.createDataTransportFormatter(args.promptPanel.paramDefn, args.param, formatter),
         formatter: formatter,
         promptPanel: args.promptPanel,
         paramDefn: args.promptPanel.paramDefn
       });
+
+      return new ExternalInputComponent(widget);
     }
   });
 
@@ -330,11 +350,13 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var formatter = args.promptPanel.createFormatter(args.promptPanel.paramDefn, args.param);
 
-      return $.extend(this.base(args), {
+      $.extend(this.base(args), {
         type: 'DojoDateTextBoxComponent',
         transportFormatter: args.promptPanel.createDataTransportFormatter(args.promptPanel.paramDefn, args.param, formatter),
         formatter: formatter
       });
+
+      return new DojoDateTextBoxComponent(widget);
     }
   });
 
@@ -354,7 +376,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
       var guid = args.promptPanel.generateWidgetGUID();
       var label = undefined;
 
-      return {
+      var widget = {
         type: this.lookupPromptType(args.promptPanel.paramDefn),
         name: args.paramGroup.name,
         htmlObject: guid,
@@ -363,6 +385,17 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         components: args.components,
         cssClass: 'parameter-wrapper'
       };
+
+      switch(widget.type) {
+        case 'horizontal':
+          return new HorizontalTableBasedPromptLayoutComponent(widget);
+        case 'flow':
+          return new FlowPromptLayoutComponent(widget);
+        default:
+          return new VerticalTableBasedPromptLayoutComponent(widget);
+      }
+
+
     }
   });
 
@@ -370,14 +403,16 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
     build: function(args) {
       var widget = this.base(args);
       var name =  'panel-' + widget.name;
-      return {
+      $.extend(widget, {
         name: name,
         htmlObject: name,
         type: 'ParameterPanelComponent',
         executeAtStart: true,
         components: args.components,
         param: args.param
-      };
+      });
+
+      return new ParameterPanelComponent(widget);
     }
   });
 
@@ -397,23 +432,28 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
         });
       };
       var widget = this.base(args);
-      return $.extend(widget, {
+      $.extend(widget, {
         type: 'StaticAutocompleteBoxComponent',
         valuesArray: convertToAutocompleteValues(widget.valuesArray),
         transportFormatter: transportFormatter,
         formatter: formatter
       });
+
+      return new StaticAutocompleteBoxComponent(widget);
     }
   });
 
   pentaho.common.prompting.builders.TextAreaBuilder = pentaho.common.prompting.builders.ValueBasedParameterWidgetBuilder.extend({
     build: function(args) {
       var formatter = args.promptPanel.createFormatter(args.promptPanel.paramDefn, args.param);
-      return $.extend(this.base(args), {
+      var widget = this.base(args);
+      $.extend(widget, {
         type: 'TextAreaComponent',
         transportFormatter: args.promptPanel.createDataTransportFormatter(args.promptPanel.paramDefn, args.param, formatter),
         formatter: formatter
       });
+
+      return new TextAreaComponent(widget);
     }
   });
 
@@ -424,7 +464,7 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
    */
   pentaho.common.prompting.builders.GarbageCollectorBuilder = Base.extend({
     build: function(args) {
-      return {
+      return new BaseComponent({
         type: 'BaseComponent',
         name: 'gc' + args.promptPanel.generateWidgetGUID(),
         executeAtStart: true,
@@ -447,7 +487,9 @@ define("common-ui/prompting/pentaho-prompting-builders", ['cdf/cdf-module', 'com
           }.bind(this));
           return false; // Don't try to update, we're done
         }
-      }
+      });
     }
   });
+
+  return pentaho;
 });

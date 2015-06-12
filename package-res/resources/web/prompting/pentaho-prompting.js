@@ -20,8 +20,10 @@ pentaho.common = pentaho.common || {};
 pentaho.common.prompting = pentaho.common.prompting || {};
 pentaho.common.prompting.parametersChanged = false;
 
-define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/prompting/pentaho-prompting-bind', 'common-ui/prompting/pentaho-prompting-components', 'common-ui/util/base64' ], function() {
-  var GUIDHelper = function() {
+define("common-ui/prompting/pentaho-prompting", [ 'cdf/Dashboard','common-ui/prompting/components/PostInitComponent', 'common-ui/prompting/pentaho-prompting-bind', 'common-ui/prompting/pentaho-prompting-components', 'common-ui/prompting/pentaho-prompting-builders', 'common-ui/util/base64' ], function(Dashboard, PostInitComponent) {
+    var dash = new Dashboard();
+
+    var GUIDHelper = function() {
     /**
      * Simple array of used Prompt GUIDs so they and their components can be uniquely identified.
      */
@@ -217,8 +219,9 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
       // Traverse all embedded components to remove them
 
       var removed = [];
-      window.CompositeComponent.mapComponentsList(components, function(c) {
-        var rc = Dashboards.removeComponent(c.name);
+      var compositeComponent = new CompositeComponent();
+      compositeComponent.mapComponentsList(components, function(c) {
+        var rc = dash.removeComponent(c.name);
         if(rc) { removed.push(rc); }
       });
 
@@ -232,7 +235,7 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
 
         if (component.parameter) {
           // Remove our parameter from any other listening components
-          $.each(Dashboards.components, function(i, c) {
+          $.each(dash.components, function(i, c) {
             if ($.isArray(c.listeners)) {
                 c.listeners = $.grep(c.listeners, function(l) {
                     return l !== component.parameter;
@@ -241,7 +244,7 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
           });
 
           // Remove our parameter from any other component's dynamic parameters list
-          $.each(Dashboards.components, function(i, c) {
+          $.each(dash.components, function(i, c) {
             if ($.isArray(c.parameters)) {
                 // TODO: I'm afraid that the following code does nothing...
                 // The return value of the $.each callback function is only taken account when === false,
@@ -269,11 +272,10 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
 
     prepareCDF: function() {
       if (this.prepared) { return; }
-      Dashboards.setGlobalContext(false);
-      Dashboards._setFlatParameters(true); // supporting parameters with dots not requiring the full path to be previously created
+      //dash._setFlatParameters(true); // supporting parameters with dots not requiring the full path to be previously created
 
       // Don't escape parameter values - we want the exactly as they are declared. We'll handle escaping the values if necessary.
-      Dashboards.escapeParameterValues = false;
+      dash.escapeParameterValues = false;
 
       this.prepared = true;
     },
@@ -486,14 +488,14 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
       this.getParameterValues = function() {
       var params = {};
       this.paramDefn.mapParameters(function(param) {
-        var value = Dashboards.getParameterValue(this.getParameterName(param));
+        var value = dash.getParameterValue(this.getParameterName(param));
         if (value === '' || typeof value == 'undefined') {
           return;
         }
         if (param.multiSelect && !$.isArray(value)) {
           value = [value];
         }
-        if (isNumberType(param.type)) {
+        if (_isNumberType(param.type)) {
           var localization = dojo.i18n.getLocalization("dojo.cldr", "number", SESSION_LOCALE.toLowerCase());
           var defaultLocalization = dojo.i18n.getLocalization("dojo.cldr", "number", null);
           var valueParsed;
@@ -517,6 +519,12 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
         params[param.name] = isNaN(valueParsed) ? value : valueParsed;
         }, this);
         return params;
+      };
+
+        //TODO REVIEW!
+      this._isNumberType = function(type) {
+        var whiteList = ["java.lang.Number", "java.lang.Byte", "java.lang.Double", "java.lang.Float", "java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.math.BigDecimal", "java.math.BigInteger"];
+        return _.contains(whiteList, type);
       };
 
       /**
@@ -579,7 +587,7 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
        * Sets the parameter value in Dashboards' parameter map.
        */
       this.setParameterValue = function(param, value) {
-        Dashboards.setParameter(this.getParameterName(param), value);
+        dash.setParameter(this.getParameterName(param), value);
       };
 
       /**
@@ -590,7 +598,7 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
           param = this.getParameterName(param);
         }
 
-        return Dashboards.getParameterValue(param);
+        return dash.getParameterValue(param);
       };
 
       this._ready = function() {
@@ -676,8 +684,8 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
       this.refresh = function(paramDefn, noAutoAutoSubmit) {
         var myself = this;
         // Should really throw an error? Or return?
-        if(Dashboards.waitingForInit && Dashboards.waitingForInit.length) {
-          Dashboards.log("Overlapping refresh!", 'warn');
+        if(dash.waitingForInit && dash.waitingForInit.length) {
+          dash.log("Overlapping refresh!", 'warn');
           setTimeout(function(){
               myself.refresh(paramDefn, noAutoAutoSubmit);
           }, 0);
@@ -702,7 +710,8 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
             }
 
             var focusedParam;
-            window.CompositeComponent.mapComponentsList(this.components, function(c) {
+            var compositeComponent = new CompositeComponent();
+            compositeComponent.mapComponentsList(this.components, function(c) {
               if(!c.components && c.param && c.promptType === 'prompt') {
                 if(!focusedParam) {
                   var ph = c.placeholder();
@@ -756,25 +765,11 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
           if(focusedParam) { delete this._focusedParam; }
 
           // dummy component for prompt panel scroll restoring (after all components was rendered)
-          var postInitComponent = {
-            name: "PostInitPromptPanelScrollRestorer",
-            type: "base",
-            lifecycle: {
-              silent: true
-            },
-            executeAtStart: true,
-            priority:999999999,
-            update: function() {
-              // restore last scroll position for prompt panel
-              if(this.promptPanelScrollValue){
-                $("#" + this.promptPanel).children(".prompt-panel").scrollTop(this.promptPanelScrollValue);
-                delete this.promptPanelScrollValue;
-              }
-
-            }
-          };
-
-          window.CompositeComponent.mapComponents(layout, function(c) {
+          var postInitComponent = new PostInitComponent();
+    
+          var compositeComponent = new CompositeComponent();
+          
+          compositeComponent.mapComponents(layout, function(c) {
             components.push(c);
 
             // Don't fire the submit on load if we have a submit button.
@@ -808,7 +803,7 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
 
           // add dummy component to components list
           if(postInitComponent.promptPanelScrollValue) {
-            components.push(postInitComponent);
+            dash.addComponent(postInitComponent);
           }
 
           if (this.components && this.components.length > 0) {
@@ -826,8 +821,8 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
           }
 
           this.components = components;
-
-          Dashboards.init(components);
+          dash.addComponents(this.components);
+          dash.init();
         } else {
           this.paramDefn.mapParameters(function(param) {
             // initialize parameter values regardless of whether we're showing the parameter or not
@@ -956,4 +951,6 @@ define("common-ui/prompting/pentaho-prompting", [ 'cdf/cdf-module', 'common-ui/p
       }
     }
   });
+
+  return dash;
 });
