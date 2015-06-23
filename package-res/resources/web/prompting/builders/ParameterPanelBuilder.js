@@ -15,21 +15,24 @@
  *
  */
 
-define(['./TableBasedPromptLayoutComponent'], function (TableBasedPromptLayoutComponent) {
+define(['./ParameterWidgetBuilderBase', '../components/ParameterPanelComponent'],
 
-  return TableBasedPromptLayoutComponent.extend({
-    getMarkupFor: function (components) {
-      var html = '';
-      $.each(components, function (i, c) {
-        var _class = this.getClassFor(c);
-        // Assume components are contained in panels of components
-        html += '<tr><td><div id="' + c.htmlObject + '"';
-        if (_class) {
-          html += ' class="' + _class + '"';
+    function (ParameterWidgetBuilderBase, ParameterPanelComponent) {
+
+      return ParameterWidgetBuilderBase.extend({
+        build: function (args) {
+          var widget = this.base(args);
+          var name = 'panel-' + widget.name;
+          $.extend(widget, {
+            name: name,
+            htmlObject: name,
+            type: 'ParameterPanelComponent',
+            executeAtStart: true,
+            components: args.components,
+            param: args.param
+          });
+
+          return new ParameterPanelComponent(widget);
         }
-        html += '></div></td></tr>';
-      }.bind(this));
-      return html;
-    }
-  });
-});
+      });
+    });

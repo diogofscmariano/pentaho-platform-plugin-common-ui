@@ -15,13 +15,16 @@
  *
  */
 
-define(['./PromptLayoutComponent'], function(PromptLayoutComponent){
+define(['cdf/components/TextInputComponent', './ParameterWidgetBuilderBase'],
+    function (TextInputComponent, ParameterWidgetBuilderBase) {
 
-  return PromptLayoutComponent.extend({
-    update: function () {
-      $('#' + this.htmlObject).addClass('flow');
-      this.base();
-    }
-  });
-
-});
+      return ParameterWidgetBuilderBase.extend({
+        build: function (args) {
+          var widget = this.base(args);
+          $.extend(widget, {
+            type: 'TextInputComponent'
+          });
+          return new TextInputComponent(widget);
+        }
+      });
+    });

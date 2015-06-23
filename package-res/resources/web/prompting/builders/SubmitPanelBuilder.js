@@ -15,21 +15,22 @@
  *
  */
 
-define(['./TableBasedPromptLayoutComponent'], function (TableBasedPromptLayoutComponent) {
+define(['cdf/lib/Base', '../components/FlowPromptLayoutComponent', '../WidgetBuilder'],
+    function (Base, FlowPromptLayoutComponent, WidgetBuilder) {
+      return Base.extend({
+        build: function (args) {
+          var guid = args.promptPanel.generateWidgetGUID();
 
-  return TableBasedPromptLayoutComponent.extend({
-    getMarkupFor: function (components) {
-      var html = '';
-      $.each(components, function (i, c) {
-        var _class = this.getClassFor(c);
-        // Assume components are contained in panels of components
-        html += '<tr><td><div id="' + c.htmlObject + '"';
-        if (_class) {
-          html += ' class="' + _class + '"';
+          return new FlowPromptLayoutComponent({
+            type: 'FlowPromptLayoutComponent',
+            promptType: 'submit',
+            name: guid,
+            htmlObject: guid,
+            executeAtStart: true,
+            components: [
+              WidgetBuilder.WidgetBuilder.build(args, 'submit')
+            ]
+          });
         }
-        html += '></div></td></tr>';
-      }.bind(this));
-      return html;
-    }
-  });
-});
+      });
+    });

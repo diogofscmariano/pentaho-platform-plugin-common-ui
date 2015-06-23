@@ -15,13 +15,16 @@
  *
  */
 
-define(['./PromptLayoutComponent'], function(PromptLayoutComponent){
+define(['./ValueBasedParameterWidgetBuilder'],
+    function (ValueBasedParameterWidgetBuilder) {
+      return ValueBasedParameterWidgetBuilder.extend({
+        build: function (args) {
+          var widget = this.base(args);
+          return $.extend(widget, {
+            defaultIfEmpty: false, // Do not auto-select anything if no selection exists
+            verticalOrientation: 'vertical' == args.param.attributes['parameter-layout']
+          });
+        }
+      });
 
-  return PromptLayoutComponent.extend({
-    update: function () {
-      $('#' + this.htmlObject).addClass('flow');
-      this.base();
-    }
-  });
-
-});
+    });

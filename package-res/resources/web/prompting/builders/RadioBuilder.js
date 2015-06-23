@@ -15,13 +15,13 @@
  *
  */
 
-define(['./PromptLayoutComponent'], function(PromptLayoutComponent){
-
-  return PromptLayoutComponent.extend({
-    update: function () {
-      $('#' + this.htmlObject).addClass('flow');
-      this.base();
-    }
-  });
-
-});
+define(['cdf/components/RadioComponent', './ToggleButtonBaseBuilder'],
+    function (RadioComponent, ToggleButtonBaseBuilder) {
+      return ToggleButtonBaseBuilder.extend({
+        build: function (args) {
+          var widget = this.base(args);
+          widget.type = 'radio'; // Specifically 'radio' instead of 'RadioComponent'
+          return new RadioComponent(widget);
+        }
+      });
+    });

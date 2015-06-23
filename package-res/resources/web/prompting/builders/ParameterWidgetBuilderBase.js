@@ -15,21 +15,27 @@
  *
  */
 
-define(['./TableBasedPromptLayoutComponent'], function (TableBasedPromptLayoutComponent) {
+define(['cdf/lib/Base'], function(Base){
 
-  return TableBasedPromptLayoutComponent.extend({
-    getMarkupFor: function (components) {
-      var html = '';
-      $.each(components, function (i, c) {
-        var _class = this.getClassFor(c);
-        // Assume components are contained in panels of components
-        html += '<tr><td><div id="' + c.htmlObject + '"';
-        if (_class) {
-          html += ' class="' + _class + '"';
+  return Base.extend({
+    build: function (args) {
+      var guid = args.promptPanel.generateWidgetGUID();
+      return {
+        promptType: 'prompt',
+        executeAtStart: true,
+        param: args.param,
+        name: guid,
+        htmlObject: guid,
+        type: undefined, // must be declared in extension class
+        parameter: args.promptPanel.getParameterName(args.param),
+        postExecution: function () {
+          this.base();
+          var tooltip = this.param.attributes['tooltip'];
+          if (tooltip) {
+            $('#' + this.htmlObject).attr('title', tooltip);
+          }
         }
-        html += '></div></td></tr>';
-      }.bind(this));
-      return html;
+      }
     }
   });
 });

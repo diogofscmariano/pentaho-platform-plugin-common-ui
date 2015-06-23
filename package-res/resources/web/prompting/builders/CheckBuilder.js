@@ -15,13 +15,14 @@
  *
  */
 
-define(['./PromptLayoutComponent'], function(PromptLayoutComponent){
+define(['cdf/components/CheckComponent', './ToggleButtonBaseBuilder'],
+    function (CheckComponent, ToggleButtonBaseBuilder) {
 
-  return PromptLayoutComponent.extend({
-    update: function () {
-      $('#' + this.htmlObject).addClass('flow');
-      this.base();
-    }
-  });
-
-});
+      return ToggleButtonBaseBuilder.extend({
+        build: function (args) {
+          var widget = this.base(args);
+          widget.type = 'CheckComponent';
+          return new CheckComponent(widget);
+        }
+      });
+    });

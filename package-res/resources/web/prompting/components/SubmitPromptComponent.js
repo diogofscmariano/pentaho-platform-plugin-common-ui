@@ -1,6 +1,23 @@
+/*!
+ * Copyright 2010 - 2015 Pentaho Corporation.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 define(['./ScopedPentahoButtonComponent'], function(ScopedPentahoButtonComponent){
-  var SubmitPromptComponent = ScopedPentahoButtonComponent.extend({
-    update: function() {
+  return ScopedPentahoButtonComponent.extend({
+    update: function () {
 
       this.base();
 
@@ -11,15 +28,17 @@ define(['./ScopedPentahoButtonComponent'], function(ScopedPentahoButtonComponent
       // TODO: true/false is irrelevant?
       if (this.paramDefn.autoSubmit == undefined) {
         var checkboxStr = '<label class="auto-complete-checkbox">' +
-                            '<input type="checkbox"' +
-                              (promptPanel.autoSubmit ? ' checked="checked"' : '') +
-                            ' />' +
-                            this.autoSubmitLabel +
-                          '</label>';
+            '<input type="checkbox"' +
+            (promptPanel.autoSubmit ? ' checked="checked"' : '') +
+            ' />' +
+            this.autoSubmitLabel +
+            '</label>';
 
         $(checkboxStr)
-          .appendTo($('#' + this.htmlObject))
-          .bind('click', function(ev) { promptPanel.autoSubmit = ev.target.checked; });
+            .appendTo($('#' + this.htmlObject))
+            .bind('click', function (ev) {
+              promptPanel.autoSubmit = ev.target.checked;
+            });
       }
 
       // BISERVER-6915 Should not request pagination when auto-submit is set to false
@@ -28,15 +47,13 @@ define(['./ScopedPentahoButtonComponent'], function(ScopedPentahoButtonComponent
       }
     },
 
-    expression: function(isInit) {
+    expression: function (isInit) {
       this.promptPanel._submit({isInit: isInit});
     },
 
-    expressionStart: function() {
+    expressionStart: function () {
       this.promptPanel._submitStart();
     }
   });
-
-  return SubmitPromptComponent;
 
 });

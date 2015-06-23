@@ -15,13 +15,8 @@
  *
  */
 
-define(['./PromptLayoutComponent'], function(PromptLayoutComponent){
-
-  return PromptLayoutComponent.extend({
-    update: function () {
-      $('#' + this.htmlObject).addClass('flow');
-      this.base();
-    }
+define(['cdf/components/BaseComponent'], function(BaseComponent){
+  return BaseComponent.extend({
+    executeAtStart: true
   });
-
 });
