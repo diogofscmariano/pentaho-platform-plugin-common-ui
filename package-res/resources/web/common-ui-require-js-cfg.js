@@ -63,6 +63,9 @@
   requirePaths["dojo/on"] = dojoOverrides + "dojo/on";
   requirePaths["dojo/dom-geometry"] = dojoOverrides + "dojo/dom-geometry";
   requirePaths["dojo/dom-prop"] = dojoOverrides + "dojo/dom-prop";
+  requirePaths["dojo/text"] = dojoOverrides + "dojo/text";
+  requireMap["*"]["dojo/text"] = dojoOverrides + "dojo/text";
+  requirePaths["dojo/selector/_loader"] = dojoOverrides + "dojo/selector/_loader";
   requirePaths["dojox/layout/ResizeHandle"] = dojoOverrides + "dojox/layout/ResizeHandle";
   requirePaths["dojox/grid/_View"] = dojoOverrides + "dojox/grid/_View";
   requirePaths["dojox/xml/parser"] = dojoOverrides + "dojox/xml/parser";
@@ -73,6 +76,7 @@
   requirePaths["dojox/json"] = dojoOverrides + "dojox/json";
   requirePaths["dojox/rpc"] = dojoOverrides + "dojox/rpc";
   requirePaths["dojo/_base/kernel"] = dojoOverrides + "dojo/_base/kernel";
+  requirePaths["dojo/_base/config"] = dojoOverrides + "dojo/_base/config";
   requirePaths["dojo/store/Memory"] = dojoOverrides + "dojo/store/Memory";
   requirePaths["dijit/_HasDropDown"] = dojoOverrides + "dijit/_HasDropDown";
   requirePaths["dijit/_CssStateMixin"] = dojoOverrides + "dijit/_CssStateMixin";
